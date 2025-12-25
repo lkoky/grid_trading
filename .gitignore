@@ -1,0 +1,9 @@
+__pycache__/
+grid_trading.db
+*.pyc
+*.pyo
+*.log
+.env
+venv/
+.env.local
+.env.*.local

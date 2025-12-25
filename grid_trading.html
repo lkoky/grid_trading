@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>股票网格交易计算</title>
+    <!-- 引入Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <!-- 引入jQuery -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.0/dist/jquery.min.js"></script>
+    <!-- 引入Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+        /* 左侧导航栏样式 */
+        .left-nav {
+            width: 30%;
+            min-width: 250px;
+            background-color: #f8f9fa;
+            border-right: 1px solid #dee2e6;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .left-nav h2 {
+            font-size: 1.3rem;
+            margin: 0;
+            color: #4d606e;
+            line-height: 40px;
+        }
+        
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            height: 40px;
+        }
+        
+        .btn-header {
+            background-color: #f87b21;
+            border-color: #f57c00;
+            height: 40px;
+            padding: 0 15px;
+            font-size: 14px;
+        }
+        .stock-item {
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            background-color: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            text-align: left;
+        }
+        .stock-item:hover {
+            background-color: #fff3e0;
+            border-color: #f87b21;
+        }
+        .stock-item.active {
+            background-color: #f87b21;
+            color: white;
+            border-color: #f57c00;
+        }
+        /* 右侧内容区域样式 */
+        .right-content {
+            width: 70%;
+            padding: 30px;
+            overflow-y: auto;
+        }
+        .right-content h1 {
+            font-size: 2rem;
+            margin-bottom: 30px;
+            color: #4d606e;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .result-section {
+            margin-top: 30px;
+            padding: 20px;
+            border: 1px solid #e4eef7;
+            border-radius: 5px;
+            background-color: #ffffff;
+        }
+        .grid-price-item {
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #f5f5f5;
+            border-radius: 4px;
+            background-color: #ffffff;
+        }
+        .profit-verification {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff3e0;
+            border-radius: 5px;
+        }
+        .no-stock-selected {
+            text-align: center;
+            color: #6c757d;
+            margin-top: 50px;
+        }
+        
+        /* 表格样式 - 与数据库文档一致 */
+        .table-style {
+            width: 100%;
+            border: 1px solid #e4eef7;
+            border-collapse: collapse;
+        }
+        .table-style tr {
+            height: 40px;
+        }
+        .table-style td {
+            border: 1px solid #f5f5f5;
+            padding: 10px;
+        }
+        .table-style .title {
+            padding: 10px;
+            text-align: center;
+            color: #000;
+            background-color: #d3d4d8;
+        }
+        .table-style .value {
+            padding: 10px;
+            color: #666;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .table-style .center {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 左侧导航栏 -->
+        <div class="left-nav">
+            <div class="header-container">
+                <h2>计算记录</h2>
+                <div>
+                    <button type="button" id="new-calculation-btn" class="btn btn-primary btn-header">新增</button>
+                    <button type="button" id="view-history-btn" class="btn btn-secondary btn-header" style="margin-left: 5px; background-color: #6c757d; border-color: #6c757d;">历史记录</button>
+                </div>
+            </div>
+            <div id="stock-list">
+                <!-- 计算记录将通过JavaScript加载 -->
+            </div>
+        </div>
+        
+        <!-- 右侧内容区域 -->
+        <div class="right-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h1>网格交易计算</h1>
+                <button type="button" id="delete-btn" class="btn btn-secondary" style="display: none; height: 35px; padding: 0 15px; font-size: 14px; background-color: #6c757d; border-color: #6c757d;">删除</button>
+            </div>
+        
+        <!-- 输入表单 -->
+        <!-- 默认显示区域：未选择股票时 -->
+        <div id="no-selection" class="no-stock-selected">
+            <h3>请从左侧选择一个股票</h3>
+            <p>或在下方表单中输入新的股票信息</p>
+        </div>
+        
+        <!-- 输入表单 -->
+        <form id="grid-form" class="mb-4" style="display: none;">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="stock_name">名称</label>
+                        <input type="text" class="form-control" id="stock_name" placeholder="请输入名称" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="stock_code">编码（可选）</label>
+                        <input type="text" class="form-control" id="stock_code" placeholder="请输入编码">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="cost_price">成本价 (元)</label>
+                        <input type="number" class="form-control" id="cost_price" step="0.0001" placeholder="请输入成本价" required>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="current_shares">当前股数</label>
+                        <input type="number" class="form-control" id="current_shares" step="100" placeholder="请输入当前股数" required>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="current_price">当前价格 (元)</label>
+                        <input type="number" class="form-control" id="current_price" step="0.0001" placeholder="请输入当前价格" required>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="expected_profit">预期盈利 (元)</label>
+                        <input type="number" class="form-control" id="expected_profit" step="100" placeholder="请输入预期盈利" required>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="grid_count">网格数量</label>
+                        <input type="number" class="form-control" id="grid_count" min="1" placeholder="请输入网格数量" required>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; align-items: center;">
+                <button type="submit" class="btn btn-primary me-3" style="background-color: #f87b21; border-color: #f57c00; height: 45px; padding: 0 20px; font-size: 16px;">计算</button>
+                <button type="button" id="save-btn" class="btn btn-success" style="display: none; height: 45px; padding: 0 20px; font-size: 16px;">保存</button>
+            </div>
+        </form>
+        
+    
+        
+        <!-- 结果显示区域 -->
+        <div id="result" class="result-section" style="display: none;">
+            <h3 class="mb-3">计算结果</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>股票信息：</strong><span id="result-stock-info"></span></p>
+                    <p><strong>每网格股票数：</strong><span id="result-shares-per-grid"></span> 股</p>
+                    <p><strong>每网格价格间距：</strong><span id="result-price-increase"></span> 元</p>
+                    <p><strong>每网格价格占比：</strong><span id="result-price-percentage"></span> %</p>
+                    <p><strong>实际盈利：</strong><span id="result-actual-profit"></span> 元</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>当前总股数：</strong><span id="result-current-shares"></span> 股</p>
+                    <p><strong>总成本：</strong><span id="result-total-cost"></span> 元</p>
+                    <p><strong>当前市值：</strong><span id="result-current-value"></span> 元</p>
+                    <p><strong>浮动盈亏：</strong><span id="result-floating-profit"></span> 元</p>
+                    <p><strong>浮动盈亏比例：</strong><span id="result-floating-profit-ratio"></span> %</p>
+                    <p><strong>预期盈利：</strong><span id="result-expected-profit"></span> 元</p>
+                    
+                </div>
+            </div>
+            
+            <h4 class="mt-4">网格价格列表</h4>
+            <div id="grid-prices-list"></div>
+            
+            <div class="profit-verification">
+                <h4>盈利验证</h4>
+                <p><strong>总卖出金额：</strong><span id="result-total-sold"></span> 元</p>
+                <p><strong>实际盈利与预期盈利差值：</strong><span id="result-profit-diff"></span> 元</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        $(document).ready(function() {
+            // 页面加载时加载历史股票记录
+            loadStockList();
+            
+            // 首次进入页面时显示计算表单，支持新增计算
+            $('#no-selection').hide();
+            $('#grid-form').show();
+            
+            // 为成本价、当前股数和当前价格字段添加变化监听器
+            $('#cost_price, #current_shares, #current_price').on('input', function() {
+                // 获取三个字段的值
+                const costPrice = parseFloat($('#cost_price').val());
+                const currentShares = parseFloat($('#current_shares').val());
+                const currentPrice = parseFloat($('#current_price').val());
+                
+                // 检查三个字段是否都有有效数值
+                if (!isNaN(costPrice) && !isNaN(currentShares) && !isNaN(currentPrice) && 
+                    costPrice > 0 && currentShares > 0 && currentPrice > 0) {
+                    // 计算预期盈利默认值 = 总成本 - 当前价值
+                    const expectedProfit = (costPrice * currentShares) - (currentPrice * currentShares);
+                    // 更新预期盈利字段
+                    $('#expected_profit').val(expectedProfit.toFixed(2));
+                }
+            });
+            
+            // 新增按钮点击事件
+            $('#new-calculation-btn').click(function() {
+                // 移除所有股票项的active类
+                $('.stock-item').removeClass('active');
+                // 隐藏结果显示区域
+                $('#result').hide();
+                // 隐藏保存和删除按钮
+                $('#save-btn').hide();
+                $('#delete-btn').hide();
+                // 清空表单数据
+                $('#grid-form')[0].reset();
+                // 显示表单（确保表单可见）
+                $('#grid-form').show();
+                // 重置currentResult变量
+                currentResult = null;
+            });
+            
+            // 监听表单提交事件
+            $('#grid-form').submit(function(e) {
+                e.preventDefault();
+                
+                // 收集表单数据
+                const data = {
+                    stock_code: $('#stock_code').val() || '',
+                    stock_name: $('#stock_name').val(),
+                    cost_price: parseFloat($('#cost_price').val()),
+                    current_shares: parseFloat($('#current_shares').val()),
+                    expected_profit: parseFloat($('#expected_profit').val()),
+                    current_price: parseFloat($('#current_price').val()),
+                    grid_count: parseInt($('#grid_count').val())
+                };
+                
+                // 验证输入数据
+                if (isNaN(data.cost_price) || data.cost_price <= 0) {
+                    alert('成本价必须为正数');
+                    return;
+                }
+                if (isNaN(data.current_shares) || data.current_shares <= 0) {
+                    alert('当前股数必须为正数');
+                    return;
+                }
+                if (isNaN(data.expected_profit) || data.expected_profit <= 0) {
+                    alert('预期盈利必须为正数');
+                    return;
+                }
+                if (isNaN(data.current_price) || data.current_price <= 0) {
+                    alert('当前价格必须为正数');
+                    return;
+                }
+                if (isNaN(data.grid_count) || data.grid_count <= 0) {
+                    alert('网格数量必须为正整数');
+                    return;
+                }
+                
+                // 发送AJAX请求
+                $.ajax({
+                    url: '/grid-trading/calculate_grid',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(data),
+                    success: function(result) {
+                        // 显示结果
+                        showResult(result);
+                    },
+                    error: function(xhr, status, error) {
+                        const errorMsg = xhr.responseJSON ? xhr.responseJSON.error : '计算出错';
+                        alert('错误: ' + errorMsg);
+                    }
+                });
+            });
+        });
+        
+        // 加载左侧股票列表
+        function loadStockList() {
+            $.ajax({
+                url: '/grid-trading/get_history',
+                type: 'GET',
+                success: function(response) {
+                    const stockList = $('#stock-list');
+                    stockList.empty();
+                    
+                    // 如果没有历史记录
+                    if (response.history.length === 0) {
+                        stockList.append('<div class="no-stocks">暂无计算记录</div>');
+                        return;
+                    }
+                    
+                    // 首先按updated_at排序（从最新到最旧）
+                    response.history.sort(function(a, b) {
+                        return new Date(b.updated_at) - new Date(a.updated_at);
+                    });
+                    
+                    // 去重：每个股票只显示一次，保留最新的记录
+                    const uniqueStocks = {};
+                    response.history.forEach(function(record) {
+                        // 使用股票名称作为唯一标识（如果有代码则使用代码）
+                        const key = record.stock_code || record.stock_name;
+                        if (!uniqueStocks[key]) {
+                            uniqueStocks[key] = record;
+                        }
+                    });
+                    
+                    // 将唯一股票转换为数组并再次按updated_at排序（从最新到最旧）
+                    const sortedStocks = Object.values(uniqueStocks).sort(function(a, b) {
+                        return new Date(b.updated_at) - new Date(a.updated_at);
+                    });
+                    
+                    // 遍历排序后的股票列表并添加到左侧导航
+                    sortedStocks.forEach(function(stock) {
+                        const stockItem = $('<div class="stock-item"></div>');
+                        stockItem.attr('data-id', stock.id);
+                        
+                        let stockHtml = `${stock.stock_name}`;
+                        if (stock.stock_code) {
+                            stockHtml += ` (${stock.stock_code})`;
+                        }
+                        
+                        stockItem.html(stockHtml);
+                        
+                        // 绑定点击事件
+                        stockItem.click(function() {
+                            // 移除其他项的active类
+                            $('.stock-item').removeClass('active');
+                            // 添加当前项的active类
+                            $(this).addClass('active');
+                            // 加载选中的股票
+                            loadSelectedStock(stock.id);
+                        });
+                        
+                        stockList.append(stockItem);
+                    });
+                },
+                error: function(xhr, status, error) {
+                    const errorMsg = xhr.responseJSON ? xhr.responseJSON.error : '获取历史记录出错';
+                    alert('错误: ' + errorMsg);
+                }
+            });
+        }
+        
+        // 加载选中的股票信息
+        function loadSelectedStock(id) {
+            $.ajax({
+                url: `/grid-trading/get_calculation/${id}`,
+                type: 'GET',
+                success: function(response) {
+                    const calculation = response.calculation;
+                    
+                    // 隐藏未选择股票提示
+                    $('#no-selection').hide();
+                    
+                    // 显示表单
+                    $('#grid-form').show();
+                    
+                    // 填充表单数据
+                    $('#stock_code').val(calculation.stock_code || '');
+                    $('#stock_name').val(calculation.stock_name);
+                    $('#cost_price').val(calculation.cost_price);
+                    $('#current_shares').val(calculation.current_shares);
+                    $('#expected_profit').val(calculation.expected_profit);
+                    $('#current_price').val(calculation.current_price);
+                    $('#grid_count').val(calculation.grid_count);
+                    
+                    // 构建计算结果对象（直接使用后端返回的数据）
+                    const result = {
+                        id: calculation.id, // 添加记录ID
+                        stock_name: calculation.stock_name,
+                        stock_code: calculation.stock_code,
+                        cost_price: calculation.cost_price,
+                        current_shares: calculation.current_shares,
+                        expected_profit: calculation.expected_profit,
+                        current_price: calculation.current_price,
+                        grid_count: calculation.grid_count,
+                        shares_per_grid: calculation.shares_per_grid,
+                        price_increase_per_grid: calculation.price_increase_per_grid,
+                        price_percentage_per_grid: calculation.price_percentage_per_grid,
+                        total_cost: calculation.total_cost,
+                        current_value: calculation.current_value || (calculation.current_shares * calculation.current_price),
+                        floating_profit: calculation.floating_profit || (calculation.current_shares * (calculation.current_price - calculation.cost_price)),
+                        floating_profit_ratio: calculation.floating_profit_ratio || ((calculation.current_price - calculation.cost_price) / calculation.cost_price * 100),
+                        total_sold: calculation.total_sold,
+                        actual_profit: calculation.actual_profit,
+                        grid_prices: calculation.grid_prices,
+                        grid_details: calculation.grid_details
+                    };
+                    
+                    // 显示计算结果
+            showResult(result);
+            // 隐藏保存按钮，因为这是加载的记录，不是新计算的
+            $('#save-btn').hide();
+                },
+                error: function(xhr, status, error) {
+                    const errorMsg = xhr.responseJSON ? xhr.responseJSON.error : '加载股票信息出错';
+                    alert('错误: ' + errorMsg);
+                }
+            });
+        }
+        
+        // 删除记录按钮点击事件
+        $('#delete-btn').click(function() {
+            if (!currentResult || !currentResult.id) {
+                alert('没有可删除的记录');
+                return;
+            }
+            
+            if (confirm('确定要删除这条记录吗1？')) {
+                $.ajax({
+                    url: `/grid-trading/delete_calculation/${currentResult.id}`,
+                    type: 'DELETE',
+                    success: function(response) {
+                        // 更新左侧导航栏
+                        loadStockList();
+                        // 重置右侧内容
+                        $('#result').hide();
+                        $('#save-btn').hide();
+                        $('#delete-btn').hide();
+                        // 清空表单
+                        $('#grid-form')[0].reset();
+                    },
+                    error: function(xhr, status, error) {
+                        const errorMsg = xhr.responseJSON ? xhr.responseJSON.error : '删除出错';
+                        alert('错误: ' + errorMsg);
+                    }
+                });
+            }
+        });
+        
+        // 保存结果按钮点击事件
+        $('#save-btn').click(function() {
+            if (!currentResult) {
+                alert('请先计算网格参数');
+                return;
+            }
+            
+            $.ajax({
+                url: '/grid-trading/save_calculation',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(currentResult),
+                success: function(response) {
+                    alert('保存成功');
+                    refreshHistory();
+                    loadStockList(); // 刷新左侧导航栏的股票列表
+                },
+                error: function(xhr, status, error) {
+                    const errorMsg = xhr.responseJSON ? xhr.responseJSON.error : '保存出错';
+                    alert('错误: ' + errorMsg);
+                }
+            });
+        });
+        
+        // 刷新历史记录按钮点击事件
+        $('#refresh-history-btn').click(function() {
+            refreshHistory();
+        });
+        
+        // 刷新历史记录函数
+        function refreshHistory() {
+            $.ajax({
+                url: '/grid-trading/get_history',
+                type: 'GET',
+                success: function(response) {
+                    const historyTable = $('#history-table tbody');
+                    historyTable.empty();
+                    
+                    response.history.forEach(function(record) {
+                            let row = $('<tr></tr>');
+                            row.append(`<td>${record.id}</td>`);
+                            row.append(`<td>${record.stock_name}</td>`);
+                            row.append(`<td>${record.stock_code || '-'}</td>`);
+                            row.append(`<td>${record.cost_price ? record.cost_price.toFixed(2) : '-'}</td>`);
+                            row.append(`<td>${record.current_shares}</td>`);
+                            row.append(`<td>${record.expected_profit}</td>`);
+                            row.append(`<td>${record.current_price}</td>`);
+                            row.append(`<td>${record.grid_count}</td>`);
+                            row.append(`<td>${record.actual_profit}</td>`);
+                            row.append(`<td>${record.updated_at}</td>`);
+                            row.append(`<td>
+                                <button type="button" class="btn btn-primary btn-sm load-btn" data-id="${record.id}">加载</button>
+                                <button type="button" class="btn btn-danger btn-sm delete-btn" data-id="${record.id}">删除</button>
+                            </td>`);
+                            historyTable.append(row);
+                        });
+                    
+                    // 绑定加载按钮点击事件
+                    $('.load-btn').click(function() {
+                        const id = $(this).data('id');
+                        loadCalculation(id);
+                    });
+                    
+                    // 绑定删除按钮点击事件（使用事件委托避免多个事件绑定）
+                    $('#history-table').off('click', '.delete-btn').on('click', '.delete-btn', function() {
+                        const id = $(this).data('id');
+                        if (confirm('确定要删除这条记录吗2？')) {
+                            deleteCalculation(id);
+                        }
+                    });
+                },
+                error: function(xhr, status, error) {
+                    const errorMsg = xhr.responseJSON ? xhr.responseJSON.error : '获取历史记录出错';
+                    alert('错误: ' + errorMsg);
+                }
+            });
+        }
+        
+        // 加载历史记录函数
+        function loadCalculation(id) {
+            $.ajax({
+                url: `/grid-trading/get_calculation/${id}`,
+                type: 'GET',
+                success: function(response) {
+                    const calculation = response.calculation;
+                    
+                    // 加载到输入表单
+                    $('#stock_code').val(calculation.stock_code || '');
+                    $('#stock_name').val(calculation.stock_name);
+                    $('#cost_price').val(calculation.cost_price);
+                    $('#current_shares').val(calculation.current_shares);
+                    $('#expected_profit').val(calculation.expected_profit);
+                    $('#current_price').val(calculation.current_price);
+                    $('#grid_count').val(calculation.grid_count);
+                    
+                    // 隐藏结果区域
+                    $('#result').hide();
+                    
+                    // 关闭历史记录模态框
+                const historyModal = bootstrap.Modal.getInstance(document.getElementById('historyModal'));
+                if (historyModal) {
+                    historyModal.hide();
+                }
+                // 隐藏保存按钮，因为这是加载的记录，不是新计算的
+                $('#save-btn').hide();
+                },
+                error: function(xhr, status, error) {
+                    const errorMsg = xhr.responseJSON ? xhr.responseJSON.error : '加载记录出错';
+                    alert('错误: ' + errorMsg);
+                }
+            });
+        }
+        
+        // 删除历史记录函数
+        function deleteCalculation(id) {
+            $.ajax({
+                url: `/grid-trading/delete_calculation/${id}`,
+                type: 'DELETE',
+                success: function(response) {
+                    refreshHistory();
+                },
+                error: function(xhr, status, error) {
+                    const errorMsg = xhr.responseJSON ? xhr.responseJSON.error : '删除记录出错';
+                    alert('错误: ' + errorMsg);
+                }
+            });
+        }
+        
+
+        
+        // 保存当前结果的变量
+        let currentResult = null;
+        
+        // 修改showResult函数，保存当前结果
+        function showResult(result) {
+            // 保存当前结果
+            currentResult = result;
+            
+            // 显示结果区域
+            $('#result').show();
+            
+            // 只有当没有id字段时才显示保存按钮（表示这是新计算的结果）
+            if (!result.id) {
+                $('#save-btn').show();
+            } else {
+                $('#save-btn').hide();
+            }
+            
+            // 根据是否有id字段判断是否显示删除按钮
+            if (result.id) {
+                $('#delete-btn').show();
+            } else {
+                $('#delete-btn').hide();
+            }
+            
+            // 填充基本信息
+            let stockInfo = result.stock_name;
+            if (result.stock_code) {
+                stockInfo += ' ' + result.stock_code;
+            }
+            $('#result-stock-info').text(stockInfo);
+            $('#result-shares-per-grid').text(result.shares_per_grid);
+            $('#result-price-increase').text(result.price_increase_per_grid);
+            $('#result-price-percentage').text(result.price_percentage_per_grid);
+            $('#result-current-shares').text(result.current_shares);
+            $('#result-total-cost').text(result.total_cost);
+            $('#result-current-value').text(result.current_value.toFixed(2));
+            $('#result-floating-profit').text(result.floating_profit.toFixed(2));
+            $('#result-floating-profit-ratio').text(result.floating_profit_ratio.toFixed(2));
+            $('#result-expected-profit').text(result.expected_profit);
+            $('#result-actual-profit').text(result.actual_profit);
+            $('#result-total-sold').text(result.total_sold);
+            
+            // 计算盈利差值
+            const profitDiff = result.actual_profit - result.expected_profit;
+            $('#result-profit-diff').text(profitDiff.toFixed(2));
+            
+            // 填充网格价格列表
+            const gridPricesList = $('#grid-prices-list');
+            gridPricesList.empty();
+            
+            // 检查是否有grid_details字段（新格式）
+            if (result.grid_details && result.grid_details.length > 0) {
+                // 创建表格
+                const table = $('<table class="table-style"></table>');
+                
+                // 添加表头
+                const thead = $('<tr></tr>');
+                thead.append('<td class="title center">网格序号</td>');
+                thead.append('<td class="title center">价格 (元)</td>');
+                thead.append('<td class="title center">买/卖出股数 (股)</td>');
+                thead.append('<td class="title center">剩余股数 (股)</td>');
+                thead.append('<td class="title center">当前网格买/卖出盈利 (元)</td>');
+                thead.append('<td class="title center">单网格盈利 (元)</td>');
+                table.append(thead);
+                
+                // 添加表内容
+                let rowIndex = 1;
+                
+                // 1. 先添加下跌网格（买入）
+                const buyGrids = result.grid_details.filter(detail => detail.type === 'buy').sort((a, b) => a.price - b.price);
+                const sellGrids = result.grid_details.filter(detail => detail.type === 'sell').sort((a, b) => a.price - b.price);
+                
+                // 添加下跌网格行
+                buyGrids.forEach((gridDetail, index) => {
+                    const row = $('<tr></tr>');
+                    row.append(`<td class="value center">${rowIndex++}</td>`);
+                    row.append(`<td class="value center">${gridDetail.price}</td>`);
+                    
+                    // 买/卖出股数：买入为负数
+                    const shares = -gridDetail.shares;
+                    row.append(`<td class="value center">${shares}</td>`);
+                    
+                    // 剩余股数
+                    row.append(`<td class="value center">${gridDetail.remaining_shares}</td>`);
+                    
+                    // 当前网格买/卖出盈利：买入为负数，计算方式为买/卖出股数×每网格价格间距
+                    const operationProfit = shares * result.price_increase_per_grid;
+                    row.append(`<td class="value center">${operationProfit.toFixed(2)}</td>`);
+                    
+                    // 单网格盈利：计算方式为（剩余股数+买/卖出股数）×网格间距价格，买入为亏损，故为负数
+                    const singleGridProfit = (gridDetail.remaining_shares + shares) * result.price_increase_per_grid;
+                    const lossProfit = -singleGridProfit;
+                    row.append(`<td class="value center">${lossProfit.toFixed(2)}</td>`);
+                    
+                    table.append(row);
+                });
+                
+                // 2. 添加当前价格基准行
+                const currentPriceRow = $('<tr></tr>');
+                currentPriceRow.append(`<td class="value center">${rowIndex++}</td>`);
+                currentPriceRow.append(`<td class="value center">${result.current_price}</td>`);
+                currentPriceRow.append(`<td class="value center">0</td>`); // 买/卖出股数为0
+                
+                // 剩余股数：使用当前股数（固定值）
+                currentPriceRow.append(`<td class="value center">${result.current_shares}</td>`);
+                
+                currentPriceRow.append(`<td class="value center">0</td>`); // 当前网格买/卖出盈利为0
+                currentPriceRow.append(`<td class="value center">0</td>`); // 单网格盈利为0
+                table.append(currentPriceRow);
+                
+                // 3. 添加上涨网格（卖出）
+                sellGrids.forEach(gridDetail => {
+                    const row = $('<tr></tr>');
+                    row.append(`<td class="value center">${rowIndex++}</td>`);
+                    row.append(`<td class="value center">${gridDetail.price}</td>`);
+                    
+                    // 买/卖出股数：卖出为正数
+                    const shares = gridDetail.shares;
+                    row.append(`<td class="value center">${shares}</td>`);
+                    
+                    // 剩余股数
+                    row.append(`<td class="value center">${gridDetail.remaining_shares}</td>`);
+                    
+                    // 当前网格买/卖出盈利：卖出为正数
+                    const operationProfit = gridDetail.shares * result.price_increase_per_grid;
+                    row.append(`<td class="value center">${operationProfit.toFixed(2)}</td>`);
+                    
+                    // 单网格盈利：计算方式为（买/卖出股数 + 剩余股数）× 每网格价格间距
+                    const singleGridProfit = (gridDetail.shares + gridDetail.remaining_shares) * result.price_increase_per_grid;
+                    row.append(`<td class="value center">${singleGridProfit.toFixed(2)}</td>`);
+                    
+                    table.append(row);
+                });
+                
+                gridPricesList.append(table);
+            } else {
+                // 兼容旧格式
+                const table = $('<table class="table-style"></table>');
+                
+                // 添加表头
+                const thead = $('<tr></tr>');
+                thead.append('<td class="title center">网格序号</td>');
+                thead.append('<td class="title center">价格 (元)</td>');
+                table.append(thead);
+                
+                // 添加表内容
+                result.grid_prices.forEach((price, index) => {
+                    const row = $('<tr></tr>');
+                    row.append(`<td class="value center">${index + 1}</td>`);
+                    row.append(`<td class="value center">${price}</td>`);
+                    table.append(row);
+                });
+                
+                gridPricesList.append(table);
+            }
+        }
+        
+        // 查看历史记录按钮点击事件
+        $('#view-history-btn').click(function() {
+            const historyModal = new bootstrap.Modal(document.getElementById('historyModal'));
+            refreshHistory();
+            historyModal.show();
+        });
+    </script>
+    
+    <!-- 历史记录模态框 -->
+    <div class="modal fade" id="historyModal" tabindex="-1" aria-labelledby="historyModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="historyModalLabel">历史记录</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <table id="history-table" class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>名称</th>
+                                <th>编码</th>
+                                <th>成本价</th>
+                                <th>当前股数</th>
+                                <th>预期盈利</th>
+                                <th>当前价格</th>
+                                <th>网格数量</th>
+                                <th>实际盈利</th>
+                                <th>更新时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody><!-- 历史记录通过JavaScript加载 --></tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
