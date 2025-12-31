@@ -80,13 +80,29 @@ def calculate_grid():
             remaining_shares = current_shares - i * shares_per_grid
             sum_of_remaining_shares += remaining_shares
         
-        # 计算每网格价格上涨，保留4位小数
-        price_increase_per_grid = expected_profit / sum_of_remaining_shares
-        price_increase_per_grid = round(price_increase_per_grid, 4)
+        # 检查是否有前端传递的价格间距或价格占比参数
+        has_price_increase = 'price_increase_per_grid' in data and data['price_increase_per_grid']
+        has_price_percentage = 'price_percentage_per_grid' in data and data['price_percentage_per_grid']
         
-        # 计算网格价格占比
-        price_percentage_per_grid = (price_increase_per_grid / current_price) * 100
-        price_percentage_per_grid = round(price_percentage_per_grid, 2)
+        # 根据前端传递的参数重新计算价格间距和价格占比
+        if has_price_increase:
+            # 如果传递了价格间距，优先使用
+            price_increase_per_grid = float(data['price_increase_per_grid'])
+            # 重新计算价格占比
+            price_percentage_per_grid = (price_increase_per_grid / current_price) * 100
+            price_percentage_per_grid = round(price_percentage_per_grid, 2)
+        elif has_price_percentage:
+            # 如果传递了价格占比，优先使用
+            price_percentage_per_grid = float(data['price_percentage_per_grid'])
+            # 重新计算价格间距
+            price_increase_per_grid = (price_percentage_per_grid / 100) * current_price
+            price_increase_per_grid = round(price_increase_per_grid, 4)
+        else:
+            # 如果都没有传递，使用默认计算
+            price_increase_per_grid = expected_profit / sum_of_remaining_shares
+            price_increase_per_grid = round(price_increase_per_grid, 4)
+            price_percentage_per_grid = (price_increase_per_grid / current_price) * 100
+            price_percentage_per_grid = round(price_percentage_per_grid, 2)
         
         # 生成网格价格列表（包含上涨和下跌网格）
         grid_details = []

@@ -245,8 +245,8 @@
                 <div class="col-md-6">
                     <p><strong>股票信息：</strong><span id="result-stock-info"></span></p>
                     <p><strong>每网格股票数：</strong><span id="result-shares-per-grid"></span> 股</p>
-                    <p><strong>每网格价格间距：</strong><span id="result-price-increase"></span> 元</p>
-                    <p><strong>每网格价格占比：</strong><span id="result-price-percentage"></span> %</p>
+                    <p><strong>每网格价格间距：</strong><input type="number" id="result-price-increase" class="form-control form-control-sm d-inline w-auto" step="0.0001" /> 元</p>
+                    <p><strong>每网格价格占比：</strong><input type="number" id="result-price-percentage" class="form-control form-control-sm d-inline w-auto" step="0.01" /> %</p>
                     <p><strong>实际盈利：</strong><span id="result-actual-profit"></span> 元</p>
                 </div>
                 <div class="col-md-6">
@@ -685,8 +685,8 @@
             }
             $('#result-stock-info').text(stockInfo);
             $('#result-shares-per-grid').text(result.shares_per_grid);
-            $('#result-price-increase').text(result.price_increase_per_grid);
-            $('#result-price-percentage').text(result.price_percentage_per_grid);
+            $('#result-price-increase').val(result.price_increase_per_grid);
+            $('#result-price-percentage').val(result.price_percentage_per_grid);
             $('#result-current-shares').text(result.current_shares);
             $('#result-total-cost').text(result.total_cost);
             $('#result-current-value').text(result.current_value.toFixed(2));
@@ -809,6 +809,75 @@
                 
                 gridPricesList.append(table);
             }
+            
+            // 添加价格间距和价格占比修改事件监听器
+            // 先移除旧的监听器，避免重复绑定
+            $('#result-price-increase, #result-price-percentage').off('input change blur');
+            
+            // 添加输入事件监听器，实时更新另一个参数
+            $('#result-price-increase').on('input', function() {
+                const priceIncrease = parseFloat($(this).val());
+                if (!isNaN(priceIncrease) && priceIncrease > 0) {
+                    const pricePercentage = (priceIncrease / result.current_price) * 100;
+                    $('#result-price-percentage').val(pricePercentage.toFixed(2));
+                }
+            });
+            
+            $('#result-price-percentage').on('input', function() {
+                const pricePercentage = parseFloat($(this).val());
+                if (!isNaN(pricePercentage) && pricePercentage > 0) {
+                    const priceIncrease = (pricePercentage / 100) * result.current_price;
+                    $('#result-price-increase').val(priceIncrease.toFixed(4));
+                }
+            });
+            
+            // 添加失去焦点或回车事件监听器，触发重新计算
+            $('#result-price-increase, #result-price-percentage').on('change blur', function() {
+                // 获取修改后的值
+                const priceIncrease = parseFloat($('#result-price-increase').val());
+                const pricePercentage = parseFloat($('#result-price-percentage').val());
+                
+                // 验证输入值
+                if (isNaN(priceIncrease) || priceIncrease <= 0 || isNaN(pricePercentage) || pricePercentage <= 0) {
+                    alert('价格间距和价格占比必须为正数');
+                    // 恢复原始值
+                    $('#result-price-increase').val(result.price_increase_per_grid);
+                    $('#result-price-percentage').val(result.price_percentage_per_grid);
+                    return;
+                }
+                
+                // 构建新的计算参数
+                const newParams = {
+                    stock_code: result.stock_code || '',
+                    stock_name: result.stock_name,
+                    cost_price: result.cost_price,
+                    current_shares: result.current_shares,
+                    expected_profit: result.expected_profit,
+                    current_price: result.current_price,
+                    grid_count: result.grid_count,
+                    // 添加修改后的参数
+                    price_increase_per_grid: priceIncrease
+                };
+                
+                // 发送AJAX请求重新计算
+                $.ajax({
+                    url: '/grid-trading/calculate_grid',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(newParams),
+                    success: function(newResult) {
+                        // 更新结果显示
+                        showResult(newResult);
+                    },
+                    error: function(xhr, status, error) {
+                        const errorMsg = xhr.responseJSON ? xhr.responseJSON.error : '重新计算出错';
+                        alert('错误: ' + errorMsg);
+                        // 恢复原始值
+                        $('#result-price-increase').val(result.price_increase_per_grid);
+                        $('#result-price-percentage').val(result.price_percentage_per_grid);
+                    }
+                });
+            });
         }
         
         // 查看历史记录按钮点击事件
