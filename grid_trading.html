@@ -216,7 +216,7 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label for="expected_profit">预期盈利 (元)</label>
-                        <input type="number" class="form-control" id="expected_profit" step="100" placeholder="请输入预期盈利" required>
+                        <input type="number" class="form-control" id="expected_profit" step="1" placeholder="请输入预期盈利" required>
                     </div>
                 </div>
             </div>
@@ -292,8 +292,8 @@
                     costPrice > 0 && currentShares > 0 && currentPrice > 0) {
                     // 计算预期盈利默认值 = 总成本 - 当前价值
                     const expectedProfit = (costPrice * currentShares) - (currentPrice * currentShares);
-                    // 更新预期盈利字段
-                    $('#expected_profit').val(expectedProfit.toFixed(2));
+                    // 更新预期盈利字段，保留整数
+                    $('#expected_profit').val(Math.round(expectedProfit));
                 }
             });
             
