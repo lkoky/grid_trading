@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,136 +11,366 @@
     <!-- 引入Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <style>
-        * {
-            box-sizing: border-box;
+        :root {
+            --bg0: #070b14;
+            --bg1: #0b1222;
+            --panel: rgba(255, 255, 255, 0.06);
+            --panel-2: rgba(255, 255, 255, 0.08);
+            --border: rgba(255, 255, 255, 0.12);
+            --border-2: rgba(255, 255, 255, 0.18);
+            --text: rgba(255, 255, 255, 0.92);
+            --muted: rgba(255, 255, 255, 0.65);
+            --muted-2: rgba(255, 255, 255, 0.45);
+            --accent: #59d8ff;
+            --accent-2: #9c7bff;
+            --good: #2de38f;
+            --warn: #ffb347;
+            --bad: #ff5c86;
+            --shadow: 0 18px 55px rgba(0, 0, 0, 0.55);
+            --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.45);
+            --radius: 16px;
         }
+
+        * { box-sizing: border-box; }
+        html, body { height: 100%; }
         body {
             margin: 0;
             padding: 0;
-            font-family: Arial, sans-serif;
+            color: var(--text);
+            font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background:
+                radial-gradient(1200px 600px at 20% -10%, rgba(89, 216, 255, 0.24), transparent 60%),
+                radial-gradient(900px 520px at 85% 10%, rgba(156, 123, 255, 0.20), transparent 55%),
+                radial-gradient(1000px 700px at 55% 110%, rgba(45, 227, 143, 0.10), transparent 60%),
+                linear-gradient(180deg, var(--bg0), var(--bg1));
+            overflow: hidden;
         }
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background-image:
+                linear-gradient(to right, rgba(255,255,255,0.06) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255,255,255,0.06) 1px, transparent 1px);
+            background-size: 48px 48px;
+            opacity: 0.12;
+            mask-image: radial-gradient(closest-side at 50% 20%, rgba(0,0,0,1), rgba(0,0,0,0));
+        }
+
         .app-container {
             display: flex;
+            gap: 18px;
             height: 100vh;
+            padding: 18px;
         }
-        /* 左侧导航栏样式 */
+
+        .left-nav,
+        .right-content {
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            background: var(--panel);
+            box-shadow: var(--shadow-soft);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            overflow: hidden;
+        }
+
         .left-nav {
-            width: 30%;
-            min-width: 250px;
-            background-color: #f8f9fa;
-            border-right: 1px solid #dee2e6;
-            padding: 20px;
+            width: 32%;
+            min-width: 280px;
+            display: flex;
+            flex-direction: column;
+        }
+        .right-content {
+            width: 68%;
+            padding: 26px 26px 32px;
             overflow-y: auto;
         }
-        .left-nav h2 {
-            font-size: 1.3rem;
-            margin: 0;
-            color: #4d606e;
-            line-height: 40px;
+        .left-nav .left-scroll {
+            padding: 18px;
+            overflow-y: auto;
         }
-        
+
         .header-container {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            height: 40px;
+            gap: 14px;
+            align-items: flex-start;
+            padding: 18px 18px 14px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
         }
-        
+        .header-title { min-width: 0; }
+        .left-nav h2 {
+            font-size: 1.05rem;
+            margin: 0;
+            letter-spacing: 0.02em;
+            color: var(--text);
+            line-height: 1.2;
+        }
+        .status-line {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 8px;
+            min-height: 20px;
+        }
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            color: var(--muted);
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.04);
+            white-space: nowrap;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.35);
+        }
+        .status-online .status-dot { background: var(--good); box-shadow: 0 0 0 6px rgba(45, 227, 143, 0.15); }
+        .status-offline .status-dot { background: var(--bad); box-shadow: 0 0 0 6px rgba(255, 92, 134, 0.14); }
+        .status-meta { font-size: 12px; color: var(--muted-2); white-space: nowrap; }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .btn-header,
+        .btn-primary,
+        .btn-success,
+        .btn-danger,
+        .btn-secondary {
+            border-radius: 12px;
+            border-color: transparent;
+            box-shadow: 0 10px 22px rgba(0,0,0,0.28);
+        }
         .btn-header {
-            background-color: #f87b21;
-            border-color: #f57c00;
             height: 40px;
-            padding: 0 15px;
+            padding: 0 14px;
             font-size: 14px;
         }
+        .btn-primary {
+            background: linear-gradient(135deg, rgba(89,216,255,0.95), rgba(156,123,255,0.92));
+        }
+        .btn-success {
+            background: linear-gradient(135deg, rgba(45,227,143,0.95), rgba(89,216,255,0.80));
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, rgba(255,92,134,0.96), rgba(255,179,71,0.70));
+        }
+        .btn-secondary {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+        .btn:hover { transform: translateY(-1px); }
+        .btn:active { transform: translateY(0px); }
+
         .stock-item {
-            padding: 12px 15px;
-            margin-bottom: 8px;
-            background-color: #ffffff;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border);
+            border-radius: 14px;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
             text-align: left;
+            color: var(--text);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         .stock-item:hover {
-            background-color: #fff3e0;
-            border-color: #f87b21;
+            border-color: rgba(89,216,255,0.55);
+            box-shadow: 0 0 0 4px rgba(89, 216, 255, 0.12);
+            transform: translateY(-1px);
         }
         .stock-item.active {
-            background-color: #f87b21;
-            color: white;
-            border-color: #f57c00;
+            background: linear-gradient(135deg, rgba(89,216,255,0.22), rgba(156,123,255,0.18));
+            border-color: rgba(89,216,255,0.60);
+            box-shadow: 0 0 0 4px rgba(156, 123, 255, 0.12);
         }
-        /* 右侧内容区域样式 */
-        .right-content {
-            width: 70%;
-            padding: 30px;
-            overflow-y: auto;
+        .no-stocks {
+            padding: 14px;
+            border-radius: 14px;
+            border: 1px dashed rgba(255,255,255,0.16);
+            color: var(--muted);
+            background: rgba(255,255,255,0.04);
         }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+        .page-title { min-width: 0; }
         .right-content h1 {
-            font-size: 2rem;
-            margin-bottom: 30px;
-            color: #4d606e;
+            font-size: 1.55rem;
+            margin: 0;
+            letter-spacing: 0.01em;
+            color: var(--text);
         }
-        .form-group {
-            margin-bottom: 20px;
+        .subtitle {
+            margin-top: 6px;
+            color: var(--muted);
+            font-size: 13px;
         }
+
+        .form-group { margin-bottom: 18px; }
+        .form-control, .form-select {
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.05);
+            color: var(--text);
+            box-shadow: none;
+        }
+        .form-control:focus {
+            border-color: rgba(89,216,255,0.65);
+            box-shadow: 0 0 0 4px rgba(89,216,255,0.14);
+            background: rgba(255,255,255,0.07);
+            color: var(--text);
+        }
+        label { color: var(--muted); }
+        .form-text { color: var(--muted-2); }
+
         .result-section {
-            margin-top: 30px;
-            padding: 20px;
-            border: 1px solid #e4eef7;
-            border-radius: 5px;
-            background-color: #ffffff;
+            margin-top: 22px;
+            padding: 18px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+            box-shadow: var(--shadow-soft);
         }
-        .grid-price-item {
-            margin-bottom: 10px;
-            padding: 10px;
-            border: 1px solid #f5f5f5;
-            border-radius: 4px;
-            background-color: #ffffff;
+        .animate-in {
+            animation: rise 240ms ease-out;
         }
+        @keyframes rise {
+            from { transform: translateY(8px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .result-section h3, .result-section h4 { color: var(--text); }
+
+        .smart-tip {
+            margin: 12px 0 6px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            border: 1px solid rgba(89,216,255,0.35);
+            background: linear-gradient(135deg, rgba(89,216,255,0.12), rgba(156,123,255,0.10));
+            color: var(--text);
+        }
+        .smart-tip .tip-title { font-weight: 600; letter-spacing: 0.01em; }
+        .smart-tip .tip-body { margin-top: 6px; color: var(--muted); font-size: 13px; }
+
         .profit-verification {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: #fff3e0;
-            border-radius: 5px;
+            margin-top: 18px;
+            padding: 14px 16px;
+            border-radius: var(--radius);
+            border: 1px solid rgba(255,179,71,0.28);
+            background: rgba(255,179,71,0.10);
         }
         .no-stock-selected {
             text-align: center;
-            color: #6c757d;
-            margin-top: 50px;
+            color: var(--muted);
+            padding: 40px 18px 28px;
+            border: 1px dashed rgba(255,255,255,0.16);
+            border-radius: var(--radius);
+            background: rgba(255,255,255,0.03);
         }
-        
-        /* 表格样式 - 与数据库文档一致 */
+
         .table-style {
             width: 100%;
-            border: 1px solid #e4eef7;
-            border-collapse: collapse;
-        }
-        .table-style tr {
-            height: 40px;
+            border: 1px solid var(--border);
+            border-collapse: separate;
+            border-spacing: 0;
+            overflow: hidden;
+            border-radius: 14px;
         }
         .table-style td {
-            border: 1px solid #f5f5f5;
-            padding: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.10);
+            padding: 10px 12px;
         }
+        .table-style tr:last-child td { border-bottom: none; }
+        .table-style tr:hover td { background: rgba(89,216,255,0.06); }
         .table-style .title {
-            padding: 10px;
             text-align: center;
-            color: #000;
-            background-color: #d3d4d8;
+            color: var(--text);
+            background: rgba(255,255,255,0.08);
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
         }
         .table-style .value {
-            padding: 10px;
-            color: #666;
+            color: var(--muted);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        .table-style .center {
-            text-align: center;
+        .table-style .center { text-align: center; }
+
+        .modal-content {
+            border-radius: 18px;
+            border: 1px solid var(--border);
+            background: rgba(10, 16, 30, 0.88);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: var(--shadow);
+        }
+        .modal-header, .modal-footer {
+            border-color: rgba(255,255,255,0.10);
+        }
+        .table { color: var(--text); }
+        .table-striped > tbody > tr:nth-of-type(odd) > * {
+            color: var(--text);
+            background-color: rgba(255,255,255,0.04);
+        }
+        .btn-close { filter: invert(1) grayscale(1); opacity: 0.7; }
+
+        .busy-overlay {
+            position: fixed;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            background: rgba(0,0,0,0.38);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 2000;
+        }
+        .busy-card {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px 18px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            background: rgba(12, 18, 34, 0.86);
+            box-shadow: var(--shadow);
+            min-width: 260px;
+        }
+        .busy-text { color: var(--text); font-size: 14px; }
+
+        @media (max-width: 991.98px) {
+            body { overflow: auto; }
+            .app-container {
+                flex-direction: column;
+                height: auto;
+                min-height: 100vh;
+            }
+            .left-nav, .right-content { width: 100%; }
+            .left-nav { min-width: 0; }
         }
     </style>
 </head>
@@ -149,22 +379,31 @@
         <!-- 左侧导航栏 -->
         <div class="left-nav">
             <div class="header-container">
-                <h2>计算记录</h2>
-                <div>
+                <div class="header-title">
+                    <h2>计算记录</h2>
+                    <div class="status-line">
+                        <span id="service-status" class="status-pill status-unknown"><span class="status-dot"></span><span class="status-text">服务检测中</span></span>
+                        <span id="last-sync" class="status-meta"></span>
+                    </div>
+                </div>
+                <div class="header-actions">
                     <button type="button" id="new-calculation-btn" class="btn btn-primary btn-header">新增</button>
-                    <button type="button" id="view-history-btn" class="btn btn-secondary btn-header" style="margin-left: 5px; background-color: #6c757d; border-color: #6c757d;">历史记录</button>
+                    <button type="button" id="view-history-btn" class="btn btn-secondary btn-header">历史记录</button>
                 </div>
             </div>
-            <div id="stock-list">
-                <!-- 计算记录将通过JavaScript加载 -->
+            <div class="left-scroll">
+                <div id="stock-list"></div>
             </div>
         </div>
         
         <!-- 右侧内容区域 -->
         <div class="right-content">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h1>网格交易计算</h1>
-                <button type="button" id="delete-btn" class="btn btn-secondary" style="display: none; height: 35px; padding: 0 15px; font-size: 14px; background-color: #6c757d; border-color: #6c757d;">删除</button>
+            <div class="page-header">
+                <div class="page-title">
+                    <h1>网格交易计算</h1>
+                    <div class="subtitle">实时计算 · 一键保存 · 历史可追溯</div>
+                </div>
+                <button type="button" id="delete-btn" class="btn btn-danger" style="display: none; height: 40px; padding: 0 14px; font-size: 14px;">删除</button>
             </div>
         
         <!-- 输入表单 -->
@@ -215,8 +454,8 @@
             <div class="row">
                 <div class="col-md-4">
                     <div class="form-group">
-                        <label for="expected_profit">预期盈利 (元)</label>
-                        <input type="number" class="form-control" id="expected_profit" step="1" placeholder="请输入预期盈利" required>
+                        <label for="expected_profit">回本金额 (元)</label>
+                        <input type="number" class="form-control" id="expected_profit" step="1" placeholder="请输入回本金额" required>
                     </div>
                 </div>
             </div>
@@ -231,7 +470,7 @@
             </div>
             
             <div style="display: flex; justify-content: flex-end; align-items: center;">
-                <button type="submit" class="btn btn-primary me-3" style="background-color: #f87b21; border-color: #f57c00; height: 45px; padding: 0 20px; font-size: 16px;">计算</button>
+                <button type="submit" class="btn btn-primary me-3" style="height: 45px; padding: 0 20px; font-size: 16px;">计算</button>
                 <button type="button" id="save-btn" class="btn btn-success" style="display: none; height: 45px; padding: 0 20px; font-size: 16px;">保存</button>
             </div>
         </form>
@@ -241,6 +480,10 @@
         <!-- 结果显示区域 -->
         <div id="result" class="result-section" style="display: none;">
             <h3 class="mb-3">计算结果</h3>
+            <div id="smart-tip" class="smart-tip" style="display: none;">
+                <div class="tip-title">智能提示</div>
+                <div class="tip-body" id="smart-tip-body"></div>
+            </div>
             <div class="row">
                 <div class="col-md-6">
                     <p><strong>股票信息：</strong><span id="result-stock-info"></span></p>
@@ -255,7 +498,7 @@
                     <p><strong>当前市值：</strong><span id="result-current-value"></span> 元</p>
                     <p><strong>浮动盈亏：</strong><span id="result-floating-profit"></span> 元</p>
                     <p><strong>浮动盈亏比例：</strong><span id="result-floating-profit-ratio"></span> %</p>
-                    <p><strong>预期盈利：</strong><span id="result-expected-profit"></span> 元</p>
+                    <p><strong>回本金额：</strong><span id="result-expected-profit"></span> 元</p>
                     
                 </div>
             </div>
@@ -266,12 +509,58 @@
             <div class="profit-verification">
                 <h4>盈利验证</h4>
                 <p><strong>总卖出金额：</strong><span id="result-total-sold"></span> 元</p>
-                <p><strong>实际盈利与预期盈利差值：</strong><span id="result-profit-diff"></span> 元</p>
+                <p><strong>实际盈利与回本金额差值：</strong><span id="result-profit-diff"></span> 元</p>
             </div>
         </div>
     </div>
     
+    <div id="busy-overlay" class="busy-overlay d-none">
+        <div class="busy-card">
+            <div class="spinner-border" style="color: var(--accent);" role="status" aria-label="loading"></div>
+            <div id="busy-text" class="busy-text">处理中...</div>
+        </div>
+    </div>
+    <div class="toast-container position-fixed top-0 end-0 p-3" id="toast-container"></div>
+
     <script>
+        function setBusy(busy, text) {
+            const overlay = $('#busy-overlay');
+            if (busy) {
+                $('#busy-text').text(text || '处理中...');
+                overlay.removeClass('d-none');
+            } else {
+                overlay.addClass('d-none');
+            }
+        }
+
+        function showToast(type, message) {
+            const id = 't' + Math.random().toString(16).slice(2);
+            const bg = type === 'success'
+                ? 'rgba(45,227,143,0.18)'
+                : type === 'warning'
+                    ? 'rgba(255,179,71,0.18)'
+                    : 'rgba(255,92,134,0.18)';
+
+            const border = type === 'success'
+                ? 'rgba(45,227,143,0.35)'
+                : type === 'warning'
+                    ? 'rgba(255,179,71,0.35)'
+                    : 'rgba(255,92,134,0.35)';
+
+            const toast = $(`
+                <div id="${id}" class="toast align-items-center text-white border-0 mb-2" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="2400">
+                    <div class="d-flex" style="border: 1px solid ${border}; border-radius: 14px; background: ${bg}; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 14px 30px rgba(0,0,0,0.35);">
+                        <div class="toast-body" style="color: var(--text);">${message}</div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            `);
+            $('#toast-container').append(toast);
+            const bsToast = new bootstrap.Toast(document.getElementById(id));
+            bsToast.show();
+            toast.on('hidden.bs.toast', function() { toast.remove(); });
+        }
+
         $(document).ready(function() {
             // 页面加载时加载历史股票记录
             loadStockList();
@@ -290,9 +579,9 @@
                 // 检查三个字段是否都有有效数值
                 if (!isNaN(costPrice) && !isNaN(currentShares) && !isNaN(currentPrice) && 
                     costPrice > 0 && currentShares > 0 && currentPrice > 0) {
-                    // 计算预期盈利默认值 = 总成本 - 当前价值
+                    // 计算回本金额默认值 = 总成本 - 当前价值
                     const expectedProfit = (costPrice * currentShares) - (currentPrice * currentShares);
-                    // 更新预期盈利字段，保留整数
+                    // 更新回本金额字段，保留整数
                     $('#expected_profit').val(Math.round(expectedProfit));
                 }
             });
@@ -331,23 +620,23 @@
                 
                 // 验证输入数据
                 if (isNaN(data.cost_price) || data.cost_price <= 0) {
-                    alert('成本价必须为正数');
+                    showToast('warning', '成本价必须为正数');
                     return;
                 }
                 if (isNaN(data.current_shares) || data.current_shares <= 0) {
-                    alert('当前股数必须为正数');
+                    showToast('warning', '当前股数必须为正数');
                     return;
                 }
                 if (isNaN(data.expected_profit) || data.expected_profit <= 0) {
-                    alert('预期盈利必须为正数');
+                    showToast('warning', '回本金额必须为正数');
                     return;
                 }
                 if (isNaN(data.current_price) || data.current_price <= 0) {
-                    alert('当前价格必须为正数');
+                    showToast('warning', '当前价格必须为正数');
                     return;
                 }
                 if (isNaN(data.grid_count) || data.grid_count <= 0) {
-                    alert('网格数量必须为正整数');
+                    showToast('warning', '网格数量必须为正整数');
                     return;
                 }
                 
@@ -357,13 +646,15 @@
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify(data),
+                    beforeSend: function() { setBusy(true, '正在计算网格参数...'); },
+                    complete: function() { setBusy(false); },
                     success: function(result) {
                         // 显示结果
                         showResult(result);
                     },
                     error: function(xhr, status, error) {
                         const errorMsg = xhr.responseJSON ? xhr.responseJSON.error : '计算出错';
-                        alert('错误: ' + errorMsg);
+                        showToast('danger', '错误：' + errorMsg);
                     }
                 });
             });
@@ -375,6 +666,9 @@
                 url: '/grid-trading/get_history',
                 type: 'GET',
                 success: function(response) {
+                    $('#service-status').removeClass('status-offline').addClass('status-online');
+                    $('#service-status .status-text').text('服务正常');
+                    $('#last-sync').text('同步：' + new Date().toLocaleTimeString());
                     const stockList = $('#stock-list');
                     stockList.empty();
                     
@@ -430,8 +724,10 @@
                     });
                 },
                 error: function(xhr, status, error) {
+                    $('#service-status').removeClass('status-online').addClass('status-offline');
+                    $('#service-status .status-text').text('服务不可用');
                     const errorMsg = xhr.responseJSON ? xhr.responseJSON.error : '获取历史记录出错';
-                    alert('错误: ' + errorMsg);
+                    showToast('danger', '错误：' + errorMsg);
                 }
             });
         }
@@ -497,14 +793,16 @@
         // 删除记录按钮点击事件
         $('#delete-btn').click(function() {
             if (!currentResult || !currentResult.id) {
-                alert('没有可删除的记录');
+                showToast('warning', '没有可删除的记录');
                 return;
             }
             
-            if (confirm('确定要删除这条记录吗1？')) {
+            if (confirm('确定要删除这条记录吗？')) {
                 $.ajax({
                     url: `/grid-trading/delete_calculation/${currentResult.id}`,
                     type: 'DELETE',
+                    beforeSend: function() { setBusy(true, '正在删除记录...'); },
+                    complete: function() { setBusy(false); },
                     success: function(response) {
                         // 更新左侧导航栏
                         loadStockList();
@@ -514,10 +812,11 @@
                         $('#delete-btn').hide();
                         // 清空表单
                         $('#grid-form')[0].reset();
+                        showToast('success', '删除成功');
                     },
                     error: function(xhr, status, error) {
                         const errorMsg = xhr.responseJSON ? xhr.responseJSON.error : '删除出错';
-                        alert('错误: ' + errorMsg);
+                        showToast('danger', '错误：' + errorMsg);
                     }
                 });
             }
@@ -526,7 +825,7 @@
         // 保存结果按钮点击事件
         $('#save-btn').click(function() {
             if (!currentResult) {
-                alert('请先计算网格参数');
+                showToast('warning', '请先计算网格参数');
                 return;
             }
             
@@ -535,14 +834,16 @@
                 type: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify(currentResult),
+                beforeSend: function() { setBusy(true, '正在保存...'); },
+                complete: function() { setBusy(false); },
                 success: function(response) {
-                    alert('保存成功');
+                    showToast('success', '保存成功');
                     refreshHistory();
                     loadStockList(); // 刷新左侧导航栏的股票列表
                 },
                 error: function(xhr, status, error) {
                     const errorMsg = xhr.responseJSON ? xhr.responseJSON.error : '保存出错';
-                    alert('错误: ' + errorMsg);
+                    showToast('danger', '错误：' + errorMsg);
                 }
             });
         });
@@ -589,14 +890,14 @@
                     // 绑定删除按钮点击事件（使用事件委托避免多个事件绑定）
                     $('#history-table').off('click', '.delete-btn').on('click', '.delete-btn', function() {
                         const id = $(this).data('id');
-                        if (confirm('确定要删除这条记录吗2？')) {
+                        if (confirm('确定要删除这条记录吗？')) {
                             deleteCalculation(id);
                         }
                     });
                 },
                 error: function(xhr, status, error) {
                     const errorMsg = xhr.responseJSON ? xhr.responseJSON.error : '获取历史记录出错';
-                    alert('错误: ' + errorMsg);
+                    showToast('danger', '错误：' + errorMsg);
                 }
             });
         }
@@ -631,7 +932,7 @@
                 },
                 error: function(xhr, status, error) {
                     const errorMsg = xhr.responseJSON ? xhr.responseJSON.error : '加载记录出错';
-                    alert('错误: ' + errorMsg);
+                    showToast('danger', '错误：' + errorMsg);
                 }
             });
         }
@@ -641,12 +942,16 @@
             $.ajax({
                 url: `/grid-trading/delete_calculation/${id}`,
                 type: 'DELETE',
+                beforeSend: function() { setBusy(true, '正在删除记录...'); },
+                complete: function() { setBusy(false); },
                 success: function(response) {
                     refreshHistory();
+                    loadStockList();
+                    showToast('success', '删除成功');
                 },
                 error: function(xhr, status, error) {
                     const errorMsg = xhr.responseJSON ? xhr.responseJSON.error : '删除记录出错';
-                    alert('错误: ' + errorMsg);
+                    showToast('danger', '错误：' + errorMsg);
                 }
             });
         }
@@ -663,6 +968,8 @@
             
             // 显示结果区域
             $('#result').show();
+            $('#result').removeClass('animate-in');
+            requestAnimationFrame(function() { $('#result').addClass('animate-in'); });
             
             // 只有当没有id字段时才显示保存按钮（表示这是新计算的结果）
             if (!result.id) {
@@ -703,6 +1010,32 @@
             // 填充网格价格列表
             const gridPricesList = $('#grid-prices-list');
             gridPricesList.empty();
+
+            const tips = [];
+            if (result.price_percentage_per_grid != null) {
+                const p = Number(result.price_percentage_per_grid);
+                if (!isNaN(p)) {
+                    if (p < 0.5) tips.push('网格过密：单格占比偏小，可能导致交易频繁与手续费影响更明显。');
+                    if (p >= 0.5 && p <= 2.5) tips.push('网格密度适中：更利于平衡成交概率与收益目标。');
+                    if (p > 2.5 && p <= 5) tips.push('网格偏疏：更依赖较大波动触发成交，可关注回撤承受能力。');
+                    if (p > 5) tips.push('网格过疏：触发难度较高，建议确认目标回本金额与网格数量是否匹配。');
+                }
+            }
+            if (result.current_price != null && result.cost_price != null) {
+                const cp = Number(result.current_price);
+                const cost = Number(result.cost_price);
+                if (!isNaN(cp) && !isNaN(cost) && cost > 0) {
+                    const ratio = (cp - cost) / cost * 100;
+                    if (ratio < -10) tips.push('当前价格低于成本较多：可优先关注下跌买入网格的资金与仓位规划。');
+                    if (ratio > 10) tips.push('当前价格高于成本较多：可重点关注上涨卖出网格的逐步减仓节奏。');
+                }
+            }
+            if (tips.length > 0) {
+                $('#smart-tip-body').text(tips.slice(0, 2).join(' '));
+                $('#smart-tip').show();
+            } else {
+                $('#smart-tip').hide();
+            }
             
             // 检查是否有grid_details字段（新格式）
             if (result.grid_details && result.grid_details.length > 0) {
@@ -839,7 +1172,7 @@
                 
                 // 验证输入值
                 if (isNaN(priceIncrease) || priceIncrease <= 0 || isNaN(pricePercentage) || pricePercentage <= 0) {
-                    alert('价格间距和价格占比必须为正数');
+                    showToast('warning', '价格间距和价格占比必须为正数');
                     // 恢复原始值
                     $('#result-price-increase').val(result.price_increase_per_grid);
                     $('#result-price-percentage').val(result.price_percentage_per_grid);
@@ -865,13 +1198,15 @@
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify(newParams),
+                    beforeSend: function() { setBusy(true, '正在重新计算...'); },
+                    complete: function() { setBusy(false); },
                     success: function(newResult) {
                         // 更新结果显示
                         showResult(newResult);
                     },
                     error: function(xhr, status, error) {
                         const errorMsg = xhr.responseJSON ? xhr.responseJSON.error : '重新计算出错';
-                        alert('错误: ' + errorMsg);
+                        showToast('danger', '错误：' + errorMsg);
                         // 恢复原始值
                         $('#result-price-increase').val(result.price_increase_per_grid);
                         $('#result-price-percentage').val(result.price_percentage_per_grid);
@@ -905,7 +1240,7 @@
                                 <th>编码</th>
                                 <th>成本价</th>
                                 <th>当前股数</th>
-                                <th>预期盈利</th>
+                                <th>回本金额</th>
                                 <th>当前价格</th>
                                 <th>网格数量</th>
                                 <th>实际盈利</th>
